@@ -1,4 +1,5 @@
 const processPromptText = require("./app.js");
+const ddTools = require("./dropdown.js");
 
 (function () {
     const containerSelector = ".ms-auto.flex.items-center.gap-1\\.5";
@@ -18,8 +19,15 @@ const processPromptText = require("./app.js");
         icon.textContent = "✨"; // or use an <img> or <svg> inside
         icon.title = "Magic Icon";
 
+        const dropdown = document.createElement("div");
+
+        document.body.appendChild(dropdown);
+        dropdown.appendChild(document.createElement("ul"));
+        dropdown.classList.add("dropdown");
+        dropdown.classList.add("hidden");
+
         // Click event (currently blank)
-        icon.addEventListener("click", () => {
+        icon.addEventListener("click", (e) => {
             // TODO: fill in functionality
             console.log("Icon clicked!");
             const ps = document.querySelectorAll("#prompt-textarea p");
@@ -51,6 +59,33 @@ const processPromptText = require("./app.js");
                 .filter((chat) => chat.text != "");
 
             console.log(chatText);
+
+            ddTools.toggleDropdownVisibility(dropdown);
+
+            if (!ddTools.dropdownIsVisible(dropdown)) {
+                const rect = e.target.getBoundingClientRect();
+                const top = rect.top;
+                const left = rect.left;
+
+                const width = dropdown.offsetWidth;
+                const height = dropdown.offsetHeight;
+
+                dropdown.style.top = `${top - height}px`;
+                dropdown.style.left = `${left - width / 2}px`;
+
+                const li = ddTools.generateListItem(dropdown);
+                li.innerText = "fhuiefhuiehiufhe";
+            }
+        });
+
+        window.addEventListener("click", (e) => {
+            if (
+                ddTools.dropdownIsVisible(dropdown) &&
+                !dropdown.contains(e.target) &&
+                !icon.contains(e.target)
+            ) {
+                ddTools.toggleDropdownVisibility(dropdown);
+            }
         });
 
         container.insertBefore(icon, container.firstChild);
