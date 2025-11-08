@@ -18,9 +18,18 @@ module.exports = {
                 use: {
                     loader: "babel-loader",
                     options: {
-                        targets: "defaults",
-                        presets: [["@babel/preset-env"]],
-                    },
+                        presets: [
+                            [
+                                "@babel/preset-env",
+                                {
+                                    targets: {
+                                        browsers: ["> 1%", "last 2 versions", "ie >= 11"]
+                                    },
+                                    modules: "commonjs"
+                                }
+                            ]
+                        ]
+                    }
                 },
             },
         ],
@@ -29,6 +38,14 @@ module.exports = {
         new CopyWebpackPlugin({
             patterns: [
                 { from: "public", to: "." }, // Copy static assets (e.g., manifest.json, HTML files, icons)
+                { 
+                    from: "node_modules/dictionary-en/index.aff", 
+                    to: "dictionary-en/index.aff" 
+                },
+                { 
+                    from: "node_modules/dictionary-en/index.dic", 
+                    to: "dictionary-en/index.dic" 
+                },
             ],
         }),
     ],
