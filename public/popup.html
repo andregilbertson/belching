@@ -2,56 +2,35 @@
 <html>
   <head>
     <title>Extension Settings</title>
-    <style>
-      body {
-        width: 250px;
-        font-family: system-ui, sans-serif;
-        padding: 12px;
-      }
-      label {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 8px;
-      }
-      input[type="color"] {
-        width: 40px;
-        height: 25px;
-        border: none;
-        cursor: pointer;
-      }
-      button {
-        width: 100%;
-        padding: 8px;
-        margin-top: 10px;
-        background-color: #4a90e2;
-        border: none;
-        border-radius: 5px;
-        color: white;
-        cursor: pointer;
-      }
-      button:hover {
-        background-color: #357abd;
-      }
-      #status {
-        margin-top: 8px;
-        text-align: center;
-        font-size: 0.9em;
-        color: #4a90e2;
-      }
-    </style>
+    <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
-    <h3>Extension Settings</h3>
+    <h3>Settings</h3>
+
+    <h4>Style</h4>
 
     <label>
-      Enable button
-      <input type="checkbox" id="enabled" />
+      Dark Mode
+      <input type="checkbox" id="darkModeToggle" />
     </label>
 
     <label>
       Button color
       <input type="color" id="color" />
+    </label>
+
+    <h4>Optimization</h4>
+
+    <label for="aggressiveness">
+      Aggressiveness
+      <input
+        type="range"
+        id="aggressiveness"
+        min="0"
+        max="4"
+        step="1"
+        value="1"
+      />
     </label>
 
     <button id="saveBtn">Save Settings</button>
