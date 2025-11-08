@@ -58,88 +58,35 @@ var spellCheckUI = require("./spellcheck-ui.js").spellCheckUI;
         console.log("✅ Circular icon added");
     }
 
-    // Initialize spellcheck UI
-    var initSpellCheckAttempted = false;
-    var initSpellCheckTimer = null;
-    
+    // Initialize spellcheck UI - run once, 5 seconds after page load
     function initSpellCheck() {
-        // Don't try if already initialized or attempt in progress
-        if (spellCheckUI.initialized || initSpellCheckAttempted) {
+        // Don't try if already initialized
+        if (spellCheckUI.initialized) {
             return;
         }
         
-        // Try multiple selectors for ChatGPT's textarea
-        // Prioritize contenteditable divs (ChatGPT's actual input) over textareas
-        var selectors = [
-            '#prompt-textarea',
-            '[contenteditable="true"][data-id="root"]',
-            'div[contenteditable="true"][role="textbox"]',
-            'div[contenteditable="true"]',
-            'textarea[placeholder*="Message"]:not(._fallbackTextarea_)',
-            'textarea:not(._fallbackTextarea_):not([class*="fallback"])'
-        ];
-
-        // Try to find the textarea and initialize spellcheck
-        for (var i = 0; i < selectors.length; i++) {
-            var selector = selectors[i];
-            var textarea = document.querySelector(selector);
-            if (textarea) {
-                // Skip fallback/hidden textareas
-                var className = textarea.className || '';
-                var isFallback = className.indexOf('fallback') !== -1 || 
-                                className.indexOf('_fallbackTextarea_') !== -1;
-                
-                // Skip hidden elements
-                var isHidden = textarea.offsetParent === null || 
-                              textarea.style.display === 'none' ||
-                              textarea.style.visibility === 'hidden';
-                
-                // For contenteditable, check if it's actually visible and usable
-                var isContentEditable = textarea.contentEditable === 'true' || textarea.isContentEditable;
-                if (isContentEditable) {
-                    var rect = textarea.getBoundingClientRect();
-                    if (rect.width < 10 || rect.height < 10) {
-                        continue; // Skip tiny/hidden elements
-                    }
-                }
-                
-                if (!isFallback && !isHidden) {
-                    console.log('✅ Found textarea with selector: ' + selector, 'tagName:', textarea.tagName, 'contentEditable:', textarea.contentEditable);
-                    initSpellCheckAttempted = true;
-                    spellCheckUI.init(selector).then(function() {
-                        initSpellCheckAttempted = false;
-                    }).catch(function(err) {
-                        console.error('Failed to initialize spellcheck:', err);
-                        initSpellCheckAttempted = false;
-                    });
-                    return;
-                }
-            }
-        }
-
-        // If not found, wait and try again (but only if not already attempting)
-        if (!initSpellCheckAttempted) {
-            if (initSpellCheckTimer) {
-                clearTimeout(initSpellCheckTimer);
-            }
-            initSpellCheckTimer = setTimeout(initSpellCheck, 1000);
+        // Only target #prompt-textarea
+        var textarea = document.querySelector('#prompt-textarea');
+        
+        if (textarea) {
+            console.log('✅ Found textarea with selector: #prompt-textarea', 'tagName:', textarea.tagName, 'contentEditable:', textarea.contentEditable);
+            spellCheckUI.init('#prompt-textarea').catch(function(err) {
+                console.error('Failed to initialize spellcheck:', err);
+            });
+        } else {
+            console.log('Spellcheck: #prompt-textarea not found after 5 seconds');
         }
     }
 
     // Run initially
     addIcon();
-    initSpellCheck();
+    
+    // Initialize spellcheck once, 5 seconds after page load
+    setTimeout(initSpellCheck, 5000);
 
-    // Re-add if container is rebuilt dynamically
+    // Re-add icon if container is rebuilt dynamically
     var observer = new MutationObserver(function() {
         addIcon();
-        // Re-initialize spellcheck if textarea appears (debounced)
-        if (!spellCheckUI.initialized && !initSpellCheckAttempted) {
-            if (initSpellCheckTimer) {
-                clearTimeout(initSpellCheckTimer);
-            }
-            initSpellCheckTimer = setTimeout(initSpellCheck, 500);
-        }
     });
     observer.observe(document.body, { childList: true, subtree: true });
 })();

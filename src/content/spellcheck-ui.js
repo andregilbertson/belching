@@ -123,14 +123,33 @@ class SpellCheckUI {
       }
       
       // Check if any mutation is from user input (not from our spellcheck spans)
+      // and only if it's within the actual input element (not nested contenteditable divs)
       var isUserInput = false;
       for (var i = 0; i < mutations.length; i++) {
         var mutation = mutations[i];
+        var target = mutation.target;
+        
+        // Skip mutations in nested contenteditable divs
+        if (target && target !== self.textarea) {
+          var parent = target.parentElement;
+          var isInNestedContentEditable = false;
+          while (parent && parent !== self.textarea) {
+            if (parent.contentEditable === 'true' || parent.isContentEditable) {
+              isInNestedContentEditable = true;
+              break;
+            }
+            parent = parent.parentElement;
+          }
+          if (isInNestedContentEditable) {
+            continue; // Skip this mutation, it's in a nested contenteditable
+          }
+        }
+        
         // Skip if the added/removed nodes are our spellcheck elements
         if (mutation.addedNodes && mutation.addedNodes.length > 0) {
           for (var j = 0; j < mutation.addedNodes.length; j++) {
             var node = mutation.addedNodes[j];
-            if (node.nodeType === 1 && (node.classList.contains('spellcheck-error') || node.querySelector('.spellcheck-error'))) {
+            if (node.nodeType === 1 && (node.classList && (node.classList.contains('spellcheck-error') || node.classList.contains('spellcheck-underline-contenteditable') || node.querySelector('.spellcheck-error')))) {
               return; // This is our modification, ignore it
             }
           }
@@ -138,7 +157,7 @@ class SpellCheckUI {
         if (mutation.removedNodes && mutation.removedNodes.length > 0) {
           for (var j = 0; j < mutation.removedNodes.length; j++) {
             var node = mutation.removedNodes[j];
-            if (node.nodeType === 1 && (node.classList.contains('spellcheck-error') || node.querySelector('.spellcheck-error'))) {
+            if (node.nodeType === 1 && (node.classList && (node.classList.contains('spellcheck-error') || node.classList.contains('spellcheck-underline-contenteditable') || node.querySelector('.spellcheck-error')))) {
               return; // This is our modification, ignore it
             }
           }
@@ -149,12 +168,13 @@ class SpellCheckUI {
       if (isUserInput && !self.isChecking) {
         clearTimeout(self.debounceTimer);
         self.debounceTimer = setTimeout(function() {
-          console.log('Spellcheck: MutationObserver triggered (user input)');
+          console.log('Spellcheck: MutationObserver triggered (user input in input element)');
           self.checkSpelling();
         }, self.checkDelay);
       }
     });
     
+    // Only observe the input element itself, not nested contenteditable divs
     this.mutationObserver.observe(this.textarea, {
       childList: true,
       subtree: true,
@@ -249,106 +269,120 @@ class SpellCheckUI {
     }
     
     self.isChecking = true;
+    console.log('Spellcheck: Starting check');
     
-    return new Promise(function(resolve) {
-      var text = '';
-      var isContentEditable = false;
-      
-      // Get text based on element type
-      if (self.textarea.tagName === 'TEXTAREA' || self.textarea.tagName === 'INPUT') {
-        text = self.textarea.value || '';
-        console.log('Spellcheck: Textarea value length:', text.length);
-      } else if (self.textarea.contentEditable === 'true' || self.textarea.isContentEditable) {
-        // For contenteditable, get plain text without HTML
-        text = self.textarea.innerText || self.textarea.textContent || '';
-        isContentEditable = true;
-        console.log('Spellcheck: Contenteditable text length:', text.length);
-      } else {
-        console.log('Spellcheck: Unknown element type:', self.textarea.tagName, 'contentEditable:', self.textarea.contentEditable);
-        resolve();
-        return;
-      }
-      
-      if (!text || text.trim().length === 0) {
-        console.log('Spellcheck: No text to check');
-        self.removeUnderlines();
-        resolve();
-        return;
-      }
-      
-      console.log('Spellcheck: Checking text, length=' + text.length + ', isContentEditable=' + isContentEditable, 'preview:', text.substring(0, 50));
-      
-      // Remove existing underlines
+    var text = '';
+    var isContentEditable = false;
+    
+    // Get text based on element type
+    if (self.textarea.tagName === 'TEXTAREA' || self.textarea.tagName === 'INPUT') {
+      text = self.textarea.value || '';
+      console.log('Spellcheck: Textarea value length:', text.length);
+    } else if (self.textarea.contentEditable === 'true' || self.textarea.isContentEditable) {
+      // For contenteditable, get plain text without HTML
+      text = self.getTextFromContentEditable(self.textarea);
+      isContentEditable = true;
+      console.log('Spellcheck: Contenteditable text length:', text.length);
+    } else {
+      console.log('Spellcheck: Unknown element type:', self.textarea.tagName);
+      self.isChecking = false;
+      return Promise.resolve();
+    }
+    
+    if (!text || text.trim().length === 0) {
+      console.log('Spellcheck: No text to check');
       self.removeUnderlines();
+      self.isChecking = false;
+      return Promise.resolve();
+    }
+    
+    console.log('Spellcheck: Checking text, length=' + text.length, 'preview:', text.substring(0, 50));
+    
+    // Remove existing underlines
+    self.removeUnderlines();
+    
+    // Extract words with their positions
+    var words = self.extractWords(text);
+    console.log('Spellcheck: Extracted ' + words.length + ' words');
+    
+    // Import the synchronous spellcheck function
+    var spellcheck = require("../../text_optimization/spellcheck.js").spellcheck;
+    
+    // Simple for loop through words
+    for (var i = 0; i < words.length; i++) {
+      var wordInfo = words[i];
       
-      // Extract words with their positions
-      var words = self.extractWords(text);
-      console.log('Spellcheck: Extracted ' + words.length + ' words');
-      
-      // Check each word (limit to prevent performance issues)
-      var wordsToCheck = words.slice(0, 100); // Limit to first 100 words
-      
-      // Process words in batches to avoid blocking
-      var batchSize = 10;
-      var batchIndex = 0;
-      
-      function processBatch() {
-        if (batchIndex >= wordsToCheck.length) {
-          console.log('Spellcheck: Finished checking all words');
-          self.isChecking = false;
-          resolve();
-          return;
-        }
-        
-        var batch = wordsToCheck.slice(batchIndex, batchIndex + batchSize);
-        var promises = [];
-        
-        for (var j = 0; j < batch.length; j++) {
-          var wordInfo = batch[j];
-          
-          // Skip very short words
-          if (wordInfo.word.length < 3) continue;
-          
-          // Skip words that are already underlined or ignored
-          if (isContentEditable) {
-            var existingError = self.textarea.querySelector('.spellcheck-error[data-word="' + self.escapeHtml(wordInfo.word) + '"]');
-            if (existingError) continue;
-            var ignoredWord = self.textarea.querySelector('[data-ignored="true"][data-word="' + self.escapeHtml(wordInfo.word) + '"]');
-            if (ignoredWord) continue;
-          }
-          
-          promises.push(
-            getSpellingSuggestions(wordInfo.word).then(function(result) {
-              if (!result.correct) {
-                if (result.suggestions && result.suggestions.length > 0) {
-                  console.log('Spellcheck: Found misspelling:', wordInfo.word, 'suggestions:', result.suggestions.length, result.suggestions.slice(0, 3));
-                  self.underlineWord(wordInfo, result.suggestions, isContentEditable);
-                } else {
-                  console.log('Spellcheck: Misspelling with no suggestions:', wordInfo.word);
-                }
-              }
-            }).catch(function(error) {
-              console.error('Error checking word:', wordInfo.word, error);
-            })
-          );
-        }
-        
-        Promise.all(promises).then(function() {
-          batchIndex += batchSize;
-          
-          // Small delay between batches to keep UI responsive
-          if (batchIndex < wordsToCheck.length) {
-            setTimeout(processBatch, 10);
-          } else {
-            console.log('Spellcheck: Finished checking all words');
-            self.isChecking = false;
-            resolve();
-          }
-        });
+      // Skip very short words
+      if (wordInfo.word.length < 3) {
+        continue;
       }
       
-      processBatch();
-    });
+      // Check the word - if suggestions.length > 0, it's misspelled
+      var suggestions = spellcheck(wordInfo.word);
+      
+      if (suggestions.length > 0) {
+        console.log('Spellcheck: Found misspelling:', wordInfo.word, 'suggestions:', suggestions.length, suggestions.slice(0, 3));
+        self.underlineWord(wordInfo, suggestions, isContentEditable);
+      }
+    }
+    
+    console.log('Spellcheck: Finished checking all words');
+    self.isChecking = false;
+    return Promise.resolve();
+  }
+
+  /**
+   * Get text from contenteditable element, excluding nested contenteditable divs
+   */
+  getTextFromContentEditable(element) {
+    if (!element) return '';
+    
+    // First, try simple methods - ProseMirror usually stores text directly
+    var simpleText = element.innerText || element.textContent || '';
+    console.log('Spellcheck: getTextFromContentEditable - simpleText length:', simpleText.length, 'preview:', simpleText.substring(0, 50));
+    
+    // Check if there are nested contenteditable divs
+    var nestedContentEditable = element.querySelector('[contenteditable="true"]');
+    if (nestedContentEditable && nestedContentEditable !== element) {
+      console.log('Spellcheck: Found nested contenteditable, using TreeWalker to filter');
+      // There's a nested contenteditable, we need to be more careful
+      // Use TreeWalker to exclude text from nested contenteditable divs
+      var textParts = [];
+      var walker = document.createTreeWalker(
+        element,
+        NodeFilter.SHOW_TEXT,
+        {
+          acceptNode: function(node) {
+            // Reject text nodes that are inside a DIFFERENT contenteditable element
+            // This ensures we only get text from #prompt-textarea itself
+            var parent = node.parentElement;
+            while (parent && parent !== element) {
+              // If we find a contenteditable that's not our target element, reject this text node
+              if ((parent.contentEditable === 'true' || parent.isContentEditable) && parent !== element) {
+                return NodeFilter.FILTER_REJECT;
+              }
+              parent = parent.parentElement;
+            }
+            return NodeFilter.FILTER_ACCEPT;
+          }
+        }
+      );
+      
+      var textNode;
+      var nodeCount = 0;
+      while (textNode = walker.nextNode()) {
+        textParts.push(textNode.textContent);
+        nodeCount++;
+      }
+      
+      var result = textParts.join('');
+      console.log('Spellcheck: getTextFromContentEditable - TreeWalker found', nodeCount, 'text nodes, extracted', result.length, 'chars, preview:', result.substring(0, 50));
+      return result;
+    } else {
+      // No nested contenteditable, safe to use simple text
+      console.log('Spellcheck: getTextFromContentEditable - No nested contenteditable, using simpleText');
+      return simpleText;
+    }
   }
 
   /**
@@ -356,18 +390,37 @@ class SpellCheckUI {
    */
   extractWords(text) {
     const words = [];
+    const seenPositions = {}; // Track positions to prevent duplicates
     // Match words that are at least 2 characters, handling apostrophes and hyphens
     const wordRegex = /\b[a-zA-Z]{2,}(?:['-][a-zA-Z]+)*\b/g;
     let match;
     
     while ((match = wordRegex.exec(text)) !== null) {
-      // Skip if this word is already marked as a spellcheck error
-      // (we'll check this when underlining)
+      var extractedWord = match[0];
+      var wordStart = match.index;
+      var wordEnd = match.index + extractedWord.length;
+      
+      // Skip if we've already seen this exact position
+      var positionKey = wordStart + '-' + wordEnd;
+      if (seenPositions[positionKey]) {
+        console.log('Spellcheck: Skipping duplicate word extraction at position', positionKey, 'word:', extractedWord);
+        continue;
+      }
+      seenPositions[positionKey] = true;
+      
+      // Verify the extracted word matches what's actually in the text at that position
+      var actualText = text.substring(wordStart, wordEnd);
+      if (actualText !== extractedWord) {
+        console.warn('Spellcheck: Word extraction mismatch! Extracted:', extractedWord, 'Actual:', actualText, 'at position', wordStart);
+        // Use the actual text from the string
+        extractedWord = actualText;
+      }
+      
       words.push({
-        word: match[0],
-        start: match.index,
-        end: match.index + match[0].length,
-        original: match[0]
+        word: extractedWord,
+        start: wordStart,
+        end: wordEnd,
+        original: extractedWord
       });
     }
     
@@ -428,15 +481,18 @@ class SpellCheckUI {
         underline.style.cssText = `
           position: fixed;
           left: ${rect.left}px;
-          top: ${rect.top + rect.height - 2}px;
+          top: ${rect.top + rect.height - 3}px;
           width: ${rect.width}px;
-          height: 2px;
-          background: linear-gradient(to right, #dc3545 0%, #dc3545 25%, transparent 25%, transparent 50%, #dc3545 50%, #dc3545 75%, transparent 75%, transparent 100%);
-          background-size: 8px 2px;
+          height: 4px;
+          background: linear-gradient(to right, #dc3545 0%, #dc3545 30%, transparent 30%, transparent 50%, #dc3545 50%, #dc3545 80%, transparent 80%, transparent 100%);
+          background-size: 12px 4px;
           background-repeat: repeat-x;
           pointer-events: auto;
           cursor: pointer;
           z-index: 999998;
+          padding: 4px 0;
+          margin-top: -4px;
+          transition: all 0.2s ease;
         `;
         
         // Add click handler
@@ -458,12 +514,20 @@ class SpellCheckUI {
           return false;
         }, true);
         
-        // Add hover effect
+        // Add hover effect - make it more visible
         underline.addEventListener('mouseenter', function() {
-          underline.style.opacity = '0.8';
+          underline.style.height = '6px';
+          underline.style.background = '#dc3545';
+          underline.style.opacity = '0.9';
+          underline.style.boxShadow = '0 2px 4px rgba(220, 53, 69, 0.3)';
         });
         underline.addEventListener('mouseleave', function() {
+          underline.style.height = '4px';
+          underline.style.background = 'linear-gradient(to right, #dc3545 0%, #dc3545 30%, transparent 30%, transparent 50%, #dc3545 50%, #dc3545 80%, transparent 80%, transparent 100%)';
+          underline.style.backgroundSize = '12px 4px';
+          underline.style.backgroundRepeat = 'repeat-x';
           underline.style.opacity = '1';
+          underline.style.boxShadow = 'none';
         });
         
         this.contentEditableOverlay.appendChild(underline);
@@ -563,10 +627,10 @@ class SpellCheckUI {
             if (range) {
               var rects = range.getClientRects();
               if (rects && rects.length > 0) {
-                var rect = rects[0];
-                underline.style.left = rect.left + 'px';
-                underline.style.top = (rect.top + rect.height - 2) + 'px';
-                underline.style.width = rect.width + 'px';
+              var rect = rects[0];
+              underline.style.left = rect.left + 'px';
+              underline.style.top = (rect.top + rect.height - 3) + 'px';
+              underline.style.width = rect.width + 'px';
               }
             }
           });
@@ -616,16 +680,32 @@ class SpellCheckUI {
       position: absolute;
       left: ${beforeWidth}px;
       width: ${wordEndWidth - beforeWidth}px;
-      border-bottom: 2px wavy #dc3545;
-      pointer-events: none;
+      border-bottom: 4px solid #dc3545;
+      pointer-events: auto;
       top: 0;
       height: 100%;
+      cursor: pointer;
+      padding-bottom: 2px;
+      margin-bottom: -2px;
+      transition: all 0.2s ease;
     `;
     
     underline.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.showPopupForTextarea(underline, suggestions, wordInfo);
+    });
+    
+    // Add hover effect for textarea underlines
+    underline.addEventListener('mouseenter', function() {
+      underline.style.borderBottomWidth = '6px';
+      underline.style.borderBottomColor = '#c82333';
+      underline.style.boxShadow = '0 2px 4px rgba(220, 53, 69, 0.3)';
+    });
+    underline.addEventListener('mouseleave', function() {
+      underline.style.borderBottomWidth = '4px';
+      underline.style.borderBottomColor = '#dc3545';
+      underline.style.boxShadow = 'none';
     });
     
     this.overlay.appendChild(underline);
@@ -832,6 +912,9 @@ class SpellCheckUI {
     // Force a reflow to ensure the popup is rendered
     this.popup.offsetHeight;
     
+    // Adjust position to keep on screen
+    this.adjustPopupPosition(rect);
+    
     const popupRect = this.popup.getBoundingClientRect();
     console.log('Spellcheck: Popup shown at', this.popup.style.top, this.popup.style.left);
     console.log('Spellcheck: Popup rect:', popupRect);
@@ -883,6 +966,73 @@ class SpellCheckUI {
   }
 
   /**
+   * Adjust popup position to keep it on screen
+   */
+  adjustPopupPosition(rect) {
+    if (!this.popup) return;
+    
+    // Force a reflow to get actual popup dimensions
+    this.popup.offsetHeight;
+    var popupRect = this.popup.getBoundingClientRect();
+    var popupWidth = popupRect.width || 300; // Default width
+    var popupHeight = popupRect.height || 200; // Default height
+    var padding = 10; // Padding from screen edges
+    
+    var viewportWidth = window.innerWidth;
+    var viewportHeight = window.innerHeight;
+    
+    // Get current position (handle both top and bottom styles)
+    var top = parseFloat(this.popup.style.top);
+    var bottom = parseFloat(this.popup.style.bottom);
+    
+    // If bottom is set, convert to top
+    if (!isNaN(bottom) && isNaN(top)) {
+      top = viewportHeight - bottom - popupHeight;
+      this.popup.style.bottom = 'auto';
+    }
+    
+    // If top is still NaN, use the actual position from getBoundingClientRect
+    if (isNaN(top)) {
+      top = popupRect.top;
+    }
+    
+    var left = parseFloat(this.popup.style.left);
+    if (isNaN(left)) {
+      left = popupRect.left;
+    }
+    
+    // Adjust horizontal position
+    if (left + popupWidth > viewportWidth - padding) {
+      left = viewportWidth - popupWidth - padding;
+    }
+    if (left < padding) {
+      left = padding;
+    }
+    
+    // Adjust vertical position
+    if (top + popupHeight > viewportHeight - padding) {
+      // Try to show above instead
+      var spaceAbove = rect.top;
+      if (spaceAbove >= popupHeight + padding) {
+        top = rect.top - popupHeight - 5;
+      } else {
+        // Not enough space above, just push it up
+        top = viewportHeight - popupHeight - padding;
+      }
+    }
+    if (top < padding) {
+      top = padding;
+    }
+    
+    // Apply adjusted position
+    this.popup.style.top = top + 'px';
+    this.popup.style.bottom = 'auto';
+    this.popup.style.left = left + 'px';
+    
+    console.log('Spellcheck: Adjusted popup position to', left, top, 'to keep on screen');
+  }
+
+  /**
    * Show popup for contenteditable (uses wordInfo for positioning)
    */
   showPopupForContentEditable(underlineElement, suggestions, wordInfo) {
@@ -912,7 +1062,7 @@ class SpellCheckUI {
     
     this.popup.innerHTML = html;
     
-    // Position popup
+    // Position popup initially
     this.popup.style.top = (rect.top + rect.height + 5) + 'px';
     this.popup.style.left = Math.max(10, Math.min(rect.left, window.innerWidth - 310)) + 'px';
     this.popup.style.display = 'block';
@@ -920,6 +1070,9 @@ class SpellCheckUI {
     this.popup.style.opacity = '1';
     this.popup.style.zIndex = '999999';
     this.popup.style.pointerEvents = 'auto';
+    
+    // Adjust position to keep on screen
+    this.adjustPopupPosition(rect);
     
     console.log('Spellcheck: Popup shown for contenteditable word:', wordInfo.word);
     
@@ -1032,6 +1185,16 @@ class SpellCheckUI {
     this.popup.style.top = `${underlineRect.bottom + 5}px`;
     this.popup.style.left = `${Math.max(10, Math.min(underlineRect.left, window.innerWidth - 310))}px`;
     this.popup.style.display = 'block';
+    this.popup.style.visibility = 'visible';
+    this.popup.style.opacity = '1';
+    this.popup.style.zIndex = '999999';
+    this.popup.style.pointerEvents = 'auto';
+    
+    // Force a reflow to get actual dimensions
+    this.popup.offsetHeight;
+    
+    // Adjust position to keep on screen
+    this.adjustPopupPosition(underlineRect);
     
     // Add click handlers
     this.popup.querySelectorAll('.spellcheck-suggestion').forEach(btn => {
