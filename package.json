@@ -26,5 +26,9 @@
         "copy-webpack-plugin": "^13.0.1",
         "webpack": "^5.102.1",
         "webpack-cli": "^6.0.1"
+    },
+    "dependencies": {
+        "dictionary-en": "^4.0.0",
+        "nspell": "^2.1.5"
     }
 }
