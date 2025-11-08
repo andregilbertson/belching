@@ -14,7 +14,7 @@ const processPromptText = require("./app.js");
         if (container.querySelector(".custom-icon")) return;
 
         const icon = document.createElement("div");
-        icon.className = "custom-icon";
+        icon.className = "custom-icon unselectable";
         icon.textContent = "✨"; // or use an <img> or <svg> inside
         icon.title = "Magic Icon";
 
