@@ -618,9 +618,11 @@ const processPromptText = require("./app.js");
                 popup.classList.remove("hidden");
             });
         };
+        var notOpened = true;
 
         // Click event (currently blank)
         icon.addEventListener("click", (e) => {
+            notOpened = false;
             e.stopPropagation();
             ignoreList = [];
             // TODO: fill in functionality
@@ -666,6 +668,7 @@ const processPromptText = require("./app.js");
             const closeBtn = target.closest("#closePopup");
 
             if (closeBtn) {
+                notOpened = true;
                 popup.classList.add("hidden");
                 console.log("Suggestions popup closed");
                 const list = popup.querySelector("#suggestionsList");
@@ -860,7 +863,9 @@ const processPromptText = require("./app.js");
 
                 clearTimeout(typingTimeout);
                 typingTimeout = setTimeout(() => {
-                    initSuggestionList();
+                    if (!notOpened) {
+                      initSuggestionList();
+                    }
                 }, 1000);
             }
 
