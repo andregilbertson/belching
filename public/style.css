@@ -333,6 +333,7 @@
 #acceptAllBtn {
     border-radius: 5px;
     padding: 5px;
+    transition: background-color 0.2s ease;
 }
 
 #acceptAllBtn:hover {

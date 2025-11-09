@@ -308,9 +308,9 @@ const processPromptText = require("./app.js");
                 messageDiv.className = "no-suggestions-message";
                 const currentText = getPromptText();
                 if (currentText.trim() === '') {
-                  messageDiv.textContent = "Looks like your prompt is empty.\n\nStart writing to get suggestions!";
+                  messageDiv.textContent = "Looks like your prompt is empty. Start writing to get suggestions!";
                 } else {
-                  messageDiv.textContent = "We're all out of suggestions.\n\nSubmit your prompt to see how much you saved!";
+                  messageDiv.textContent = "We're all out of suggestions. Submit your prompt to see how much you saved!";
                 }
               messageDiv.style.opacity = "0";
               messageDiv.style.transition = "opacity 0.4s";
@@ -864,7 +864,7 @@ const processPromptText = require("./app.js");
                     const list = popup.querySelector("#suggestionsList");
                     const messageDiv = document.createElement("div");
                     messageDiv.className = "no-suggestions-message";
-                    messageDiv.textContent = "That is all of our suggestions.";
+                    messageDiv.textContent = "We're all out of suggestions. Submit your prompt to see how much you saved!";
                     list.appendChild(messageDiv);
                 }
 
