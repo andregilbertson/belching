@@ -261,9 +261,9 @@ const processPromptText = require("./app.js");
             });
 
             // Show/hide Accept All button based on suggestions
-            const acceptAllBtn = popup.querySelector("#acceptAllBtn");
-            if (acceptAllBtn) {
-                acceptAllBtn.style.display =
+            const footer = popup.querySelector(".popup-footer");
+            if (footer) {
+                footer.style.display =
                     currentSuggestions.length > 0 ? "block" : "none";
             }
 
@@ -774,6 +774,13 @@ const processPromptText = require("./app.js");
                     messageDiv.className = "no-suggestions-message";
                     messageDiv.textContent = "That is all of our suggestions.";
                     list.appendChild(messageDiv);
+                }
+
+                // Show/hide Accept All button based on suggestions
+                const footer = popup.querySelector(".popup-footer");
+                if (footer) {
+                    footer.style.display =
+                        currentSuggestions.length > 0 ? "block" : "none";
                 }
 
                 e.stopPropagation();
