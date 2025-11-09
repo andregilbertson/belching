@@ -218,6 +218,11 @@ const processPromptText = require("./app.js");
           }
         }
         const initSuggestionList = () => {
+          const list = popup.querySelector("#suggestionsList");
+            while (list.firstChild) {
+              list.removeChild(list.firstChild);
+            }
+
           const ps = document.querySelectorAll("#prompt-textarea p");
             const promptText = Array.from(ps)
                 .map((p) => p.textContent.trim())
@@ -230,6 +235,7 @@ const processPromptText = require("./app.js");
             popup.classList.remove("hidden");
            });
         };
+
 
         
         // Click event (currently blank)
@@ -359,6 +365,36 @@ const processPromptText = require("./app.js");
 
         container.insertBefore(icon, container.firstChild);
         console.log("✅ Circular icon added");
+
+        const waitForTextBox = setInterval(() => {
+          const textBox = document.querySelector("#prompt-textarea");
+          let typingTimeout;
+
+          function handleTextChange() {
+            const ps = textBox.querySelectorAll("p");
+            const combinedText = Array.from(ps).map(p => p.innerText).join("\n");
+
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => {
+              initSuggestionList();
+            }, 1000);
+          }
+
+
+          if (textBox) {
+            clearInterval(waitForTextBox);
+
+            
+            textBox.addEventListener("input", handleTextChange);
+            textBox.addEventListener("keydown", (e) => {
+              if (e.key === "Backspace" || e.key === "Delete") {
+                handleTextChange();
+              }
+            });
+
+          }
+        }, 200);
+
     }
 
     // Run initially

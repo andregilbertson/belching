@@ -144,7 +144,6 @@ function removeRedundancy(text) {
  */
 function removeFillers(text) {
   const fillerPhrases = [
-    /\bas a matter of fact\b/gi,
     /\bin actual fact\b/gi,
     /\bthe fact of the matter is\b/gi,
     /\bit goes without saying\b/gi,
@@ -263,7 +262,6 @@ function makeConcise(text, options = {}) {
   // Step 4: Fillers
   if (shouldRemoveFillers) {
     const fillerPatterns = [
-      /\bas a matter of fact\b/gi,
       /\bin actual fact\b/gi,
       /\bthe fact of the matter is\b/gi,
       /\bit goes without saying\b/gi,
