@@ -4,6 +4,7 @@ const processPromptText = require("./app.js");
     const containerSelector = ".ms-auto.flex.items-center.gap-1\\.5";
 
     function addIcon() {
+        var ignoreList;
         const container = document.querySelector(containerSelector);
         if (!container) {
             console.log("failed container");
@@ -139,17 +140,28 @@ const processPromptText = require("./app.js");
           
           // Update stored prompt text
           currentPromptText = newText;
+
+          //refresh suggestions list
+          initSuggestionList();
         }
 
         // Populate popup with suggestions
         function populateSuggestions(suggestions) {
-          // Store suggestions for use in accept/reject handlers
-          currentSuggestions = suggestions;
+          //Store suggestions for use in accept/reject handlers
+                    // console.log("suggs", suggestions); 
+                    // console.log("ignorelist", ignoreList);
+          currentSuggestions = suggestions.filter(s => {
+            return !ignoreList.some(ignored => 
+              
+              ignored.before == s.before && ignored.after == s.after
+            );
+          });
+          //currentSuggestions = suggestions;
           // Store current prompt text
           currentPromptText = getPromptText();
           const list = popup.querySelector("#suggestionsList");
           list.innerHTML = "";
-          suggestions.forEach((s, i) => {
+          currentSuggestions.forEach((s, i) => {
             const div = document.createElement("div");
             div.className = "suggestion";
             div.innerHTML = `
@@ -183,6 +195,7 @@ const processPromptText = require("./app.js");
         // Click event (currently blank)
         icon.addEventListener("click", (e) => {
           e.stopPropagation();
+          ignoreList = [];
             // TODO: fill in functionality
             console.log("Icon clicked!");
             initSuggestionList();
@@ -249,10 +262,28 @@ const processPromptText = require("./app.js");
             });
 
           } else if (target.classList.contains("reject-btn")) {
-
             const idx = target.dataset.i;
-            console.log("Rejected:", currentSuggestions[idx]);
+            const suggestion = currentSuggestions[idx];
+            console.log("Rejected:", suggestion);
             target.closest(".suggestion").remove();
+            // Remove the suggestion from the UI
+            target.closest(".suggestion").remove();
+
+            // Remove from currentSuggestions array
+            currentSuggestions.splice(idx, 1);
+
+            // Update indices in remaining suggestions
+            const list = popup.querySelector("#suggestionsList");
+            const remainingSuggestions = list.querySelectorAll(".suggestion");
+            remainingSuggestions.forEach((suggestionEl, newIdx) => {
+              const acceptBtn = suggestionEl.querySelector(".accept-btn");
+              const rejectBtn = suggestionEl.querySelector(".reject-btn");
+              if (acceptBtn) acceptBtn.dataset.i = newIdx;
+              if (rejectBtn) rejectBtn.dataset.i = newIdx;
+            });
+
+            ignoreList.push(suggestion);
+            console.log(ignoreList);
             
           }
 
