@@ -154,7 +154,7 @@
 /* Popup container */
 #suggestionsPopup {
     position: fixed;
-    bottom: 70px;
+    bottom: 90px;
     right: 20px;
     width: 350px;
     max-height: 400px;
@@ -216,6 +216,7 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+    transition: height 0.3s ease-out;
 }
 
 .suggestion {
@@ -226,6 +227,18 @@
     grid-template-rows: 1fr 1fr 1fr;
     grid-template-columns: 2fr 1fr;
     height: 100px;
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.3s ease-out, transform 0.3s ease-out, height 0.3s ease-out, margin 0.3s ease-out, padding 0.3s ease-out;
+}
+
+.suggestion.removing {
+    opacity: 0;
+    transform: translateX(-20px);
+    height: 0;
+    margin: 0;
+    padding: 0;
+    border: none;
 }
 
 .suggestion-type {

@@ -8,9 +8,9 @@ html, body {
 }
 
 body {
-  width: 360px !important;
-  min-width: 360px !important;
-  max-width: 360px !important;
+  width: 450px !important;
+  min-width: 450px !important;
+  max-width: 450px !important;
   font-family: system-ui, sans-serif;
   padding: 12px;
   background-color: var(--bg-color, #ffffff);
@@ -142,4 +142,139 @@ button:hover {
 
 .metric-value {
   font-weight: bold;
+}
+
+/* Progress bar styles */
+.progress-container {
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.progress-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 240px;
+  height: 140px;
+}
+
+.progress-svg {
+  width: 100%;
+  height: auto;
+}
+
+.progress-content {
+  position: absolute;
+  top: 60%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+}
+
+.progress-percentage {
+  font-size: 2rem;
+  font-weight: bold;
+  color: white;
+  margin-bottom: 4px;
+  line-height: 1;
+}
+
+.progress-label {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.progress-bottles {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+/* Progress and Bulb Container */
+.progress-bulb-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 30px;
+  margin: 20px 0;
+  flex-wrap: nowrap;
+}
+
+/* Bulb Container */
+.bulb-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  min-width: 150px;
+}
+
+/* Bulb Wire */
+.bulb-wire {
+  width: 2px;
+  height: 40px;
+  background: #d97706;
+  margin-bottom: 4px;
+  transition: background-color 0.3s;
+}
+
+/* Bulb Wrapper */
+.bulb-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+/* Bulb Glow */
+.bulb-glow {
+  transition: all 0.3s;
+  filter: drop-shadow(0 0 20px rgba(250, 204, 21, 0.8));
+}
+
+.bulb-svg {
+  color: #facc15;
+  fill: #fef08a;
+  transition: color 0.3s, fill 0.3s;
+}
+
+/* Bulb Glow Effect */
+.bulb-glow-effect {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 80px;
+  height: 80px;
+  background: #facc15;
+  border-radius: 50%;
+  filter: blur(20px);
+  opacity: 0.3;
+  transform: translate(0, 0);
+}
+
+/* Bulb Time Display */
+.bulb-time-simple {
+  margin-top: 12px;
+  text-align: center;
+}
+
+.bulb-time-label {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.bulb-time-value {
+  color: #facc15;
+  font-size: 1.1rem;
+  font-weight: bold;
+  transition: color 0.3s;
 }

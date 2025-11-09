@@ -13,23 +13,10 @@ module.exports = {
     module: {
         rules: [
             {
-                test: /\.(?:js|mjs|cjs)$/,
+                test: /\.(?:js|mjs|cjs|jsx)$/,
                 exclude: /node_modules/,
                 use: {
                     loader: "babel-loader",
-                    options: {
-                        presets: [
-                            [
-                                "@babel/preset-env",
-                                {
-                                    targets: {
-                                        browsers: ["> 1%", "last 2 versions", "ie >= 11"]
-                                    },
-                                    modules: "commonjs"
-                                }
-                            ]
-                        ]
-                    }
                 },
             },
         ],
@@ -38,6 +25,14 @@ module.exports = {
         new CopyWebpackPlugin({
             patterns: [
                 { from: "public", to: "." }, // Copy static assets (e.g., manifest.json, HTML files, icons)
+                { 
+                    from: "src/popup/popup.html", 
+                    to: "popup.html" 
+                },
+                { 
+                    from: "src/popup/popup.css", 
+                    to: "popup.css" 
+                },
                 { 
                     from: "node_modules/dictionary-en/index.aff", 
                     to: "dictionary-en/index.aff" 

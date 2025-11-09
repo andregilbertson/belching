@@ -7,6 +7,7 @@ module.exports = {
                 modules: "cjs", // Transform ES modules to CommonJS
             },
         ],
+        "@babel/preset-react",
     ],
 };
 

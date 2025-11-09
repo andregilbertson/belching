@@ -22,6 +22,7 @@
     "devDependencies": {
         "@babel/core": "^7.28.5",
         "@babel/preset-env": "^7.28.5",
+        "@babel/preset-react": "^7.28.5",
         "babel-loader": "^10.0.0",
         "copy-webpack-plugin": "^13.0.1",
         "webpack": "^5.102.1",
@@ -31,6 +32,8 @@
         "dictionary-en": "^4.0.0",
         "js-tiktoken": "^1.0.21",
         "nspell": "^2.1.5",
+        "react": "^19.2.0",
+        "react-dom": "^19.2.0",
         "tiktoken": "^1.0.22"
     }
 }

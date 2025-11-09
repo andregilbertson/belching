@@ -107,6 +107,21 @@ const processPromptText = require("./app.js");
             return chrome?.storage?.sync || browser?.storage?.sync;
         }
 
+        // Helper function to smoothly remove a suggestion element
+        function removeSuggestionWithAnimation(element) {
+            if (!element) return;
+            
+            // Add removing class to trigger animation
+            element.classList.add("removing");
+            
+            // Wait for animation to complete, then remove element
+            setTimeout(() => {
+                if (element.parentNode) {
+                    element.remove();
+                }
+            }, 300); // Match the CSS transition duration
+        }
+
         // Function to add tokens saved to Chrome extension storage
         function addTokensSaved(tokens) {
             const storage = getStorage();
@@ -192,12 +207,32 @@ const processPromptText = require("./app.js");
                 currentPromptTokensSaved += totalTokensSaved;
             }
 
-            // Clear the suggestions list UI
+            // Get all suggestion elements for animation
             const list = popup.querySelector("#suggestionsList");
-            list.innerHTML = "";
+            const suggestionElements = Array.from(list.querySelectorAll(".suggestion:not(.removing)"));
 
-            // Refresh suggestions list once at the end with all changes applied
-            initSuggestionList();
+            if (suggestionElements.length === 0) {
+                // No elements to animate, just refresh
+                initSuggestionList();
+                return;
+            }
+
+            // Animate each suggestion out with a cascading delay
+            suggestionElements.forEach((element, index) => {
+                setTimeout(() => {
+                    removeSuggestionWithAnimation(element);
+                }, index * 50); // 50ms delay between each animation
+            });
+
+            // Clear and refresh after all animations complete
+            // Total time: (number of suggestions * 50ms) + 300ms (animation duration)
+            const totalAnimationTime = (suggestionElements.length * 50) + 350;
+            setTimeout(() => {
+                // Clear any remaining elements
+                list.innerHTML = "";
+                // Refresh suggestions list once at the end with all changes applied
+                initSuggestionList();
+            }, totalAnimationTime);
         }
 
         // Function to apply a suggestion change to the prompt
@@ -725,27 +760,30 @@ const processPromptText = require("./app.js");
                     currentPromptTokensSaved += suggestion.tokensSaved;
                 }
 
-                // Remove the suggestion from the UI
-                acceptBtn.closest(".suggestion").remove();
+                // Remove the suggestion from the UI with animation
+                const suggestionElement = acceptBtn.closest(".suggestion");
+                removeSuggestionWithAnimation(suggestionElement);
 
                 // Remove from currentSuggestions array
                 currentSuggestions.splice(idx, 1);
 
-                // Update indices in remaining suggestions
-                const list = popup.querySelector("#suggestionsList");
-                const remainingSuggestions =
-                    list.querySelectorAll(".suggestion");
-                remainingSuggestions.forEach((suggestionEl, newIdx) => {
-                    const btn = suggestionEl.querySelector(".accept-btn");
-                    const rBtn = suggestionEl.querySelector(".reject-btn");
-                    if (btn) btn.dataset.i = newIdx;
-                    if (rBtn) rBtn.dataset.i = newIdx;
-                });
+                // Update indices in remaining suggestions after animation starts
+                setTimeout(() => {
+                    const list = popup.querySelector("#suggestionsList");
+                    const remainingSuggestions =
+                        list.querySelectorAll(".suggestion:not(.removing)");
+                    remainingSuggestions.forEach((suggestionEl, newIdx) => {
+                        const btn = suggestionEl.querySelector(".accept-btn");
+                        const rBtn = suggestionEl.querySelector(".reject-btn");
+                        if (btn) btn.dataset.i = newIdx;
+                        if (rBtn) rBtn.dataset.i = newIdx;
+                    });
+                }, 50);
 
-                // Refresh suggestions list after a short delay to allow UI updates
+                // Refresh suggestions list after animation completes
                 setTimeout(() => {
                     initSuggestionList();
-                }, 100);
+                }, 350);
 
                 e.stopPropagation();
                 return;
@@ -771,22 +809,25 @@ const processPromptText = require("./app.js");
 
                 console.log("Rejected:", suggestion);
 
-                // Remove the suggestion from the UI
-                rejectBtn.closest(".suggestion").remove();
+                // Remove the suggestion from the UI with animation
+                const suggestionElement = rejectBtn.closest(".suggestion");
+                removeSuggestionWithAnimation(suggestionElement);
 
                 // Remove from currentSuggestions array
                 currentSuggestions.splice(idx, 1);
 
-                // Update indices in remaining suggestions
-                const list = popup.querySelector("#suggestionsList");
-                const remainingSuggestions =
-                    list.querySelectorAll(".suggestion");
-                remainingSuggestions.forEach((suggestionEl, newIdx) => {
-                    const acceptBtn = suggestionEl.querySelector(".accept-btn");
-                    const rejectBtn = suggestionEl.querySelector(".reject-btn");
-                    if (acceptBtn) acceptBtn.dataset.i = newIdx;
-                    if (rejectBtn) rejectBtn.dataset.i = newIdx;
-                });
+                // Update indices in remaining suggestions after animation starts
+                setTimeout(() => {
+                    const list = popup.querySelector("#suggestionsList");
+                    const remainingSuggestions =
+                        list.querySelectorAll(".suggestion:not(.removing)");
+                    remainingSuggestions.forEach((suggestionEl, newIdx) => {
+                        const acceptBtn = suggestionEl.querySelector(".accept-btn");
+                        const rejectBtn = suggestionEl.querySelector(".reject-btn");
+                        if (acceptBtn) acceptBtn.dataset.i = newIdx;
+                        if (rejectBtn) rejectBtn.dataset.i = newIdx;
+                    });
+                }, 50);
 
                 ignoreList.push(suggestion);
                 console.log("ignoreList:", ignoreList);
