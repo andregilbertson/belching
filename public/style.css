@@ -1,3 +1,11 @@
+:root {
+  --leaf-green: #16a34a;
+  --main-surface-primary: #2f2f2f;
+  --main-surface-secondary: #424242;
+  --main-surface-tertiary: #676767;
+  --border-default: #ffffff26;
+}
+
 .prompt-wrapper {
     display: flex;
     align-items: center;
@@ -36,7 +44,7 @@
 
 .custom-icon:hover {
   /* fill: white; */
-  background: #16a34a;         /* sustainability green */
+  background: var(--leaf-green);         /* sustainability green */
   color: #ffffff;
   border-color: #0f8a3b;
   box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
@@ -149,7 +157,7 @@
   right: 20px;
   width: 350px;
   max-height: 400px;
-  background: #fff;
+  background: var(--main-surface-secondary);
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.2);
   display: flex;
@@ -166,16 +174,18 @@
 
 /* Header */
 .popup-header {
-  background: #4a90e2;
-  color: white;
+  border-bottom: 1px solid var(--border-default);
+
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 12px;
+  padding: 8px 0px;
+  margin: 0px 12px;
 }
 .popup-header h2 {
   margin: 0;
   font-size: 16px;
+  color: white;
 }
 .popup-header button {
   background: transparent;
@@ -192,15 +202,14 @@
   flex-grow: 1;
 }
 .suggestion {
-  background: #f8f9fa;
-  border: 1px solid #ddd;
+  background-color: var(--main-surface-tertiary);
   border-radius: 8px;
   padding: 10px;
   margin-bottom: 8px;
 }
 .suggestion-type {
   font-size: 13px;
-  color: #4a90e2;
+  color: white;
   font-weight: bold;
 }
 .suggestion-buttons {
