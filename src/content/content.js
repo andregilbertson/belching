@@ -60,13 +60,15 @@ const processPromptText = require("./app.js");
           <div class="popup-header">
             <h2>Suggestions</h2>
             <div class="header-buttons">
-              <button id="acceptAllBtn" class="accept-all-btn">Accept All</button>
               <button id="closePopup">
                 <svg class="btn-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M504.6 148.5C515.9 134.9 514.1 114.7 500.5 103.4C486.9 92.1 466.7 93.9 455.4 107.5L320 270L184.6 107.5C173.3 93.9 153.1 92.1 139.5 103.4C125.9 114.7 124.1 134.9 135.4 148.5L278.3 320L135.4 491.5C124.1 505.1 125.9 525.3 139.5 536.6C153.1 547.9 173.3 546.1 184.6 532.5L320 370L455.4 532.5C466.7 546.1 486.9 547.9 500.5 536.6C514.1 525.3 515.9 505.1 504.6 491.5L361.7 320L504.6 148.5z"/></svg>
               </button>
             </div>
           </div>
           <div id="suggestionsList" class="suggestions-list"></div>
+          <div class="popup-footer">
+            <button id="acceptAllBtn" class="accept-all-btn">Accept All</button>
+          </div>
         `;
         document.body.appendChild(popup);
 
@@ -183,12 +185,12 @@ const processPromptText = require("./app.js");
                 }
             });
 
-          // Add all tokens saved to Chrome extension storage at once
-          if (totalTokensSaved > 0) {
-            addTokensSaved(totalTokensSaved);
-            // Track tokens saved for current prompt
-            currentPromptTokensSaved += totalTokensSaved;
-          }
+            // Add all tokens saved to Chrome extension storage at once
+            if (totalTokensSaved > 0) {
+                addTokensSaved(totalTokensSaved);
+                // Track tokens saved for current prompt
+                currentPromptTokensSaved += totalTokensSaved;
+            }
 
             // Clear the suggestions list UI
             const list = popup.querySelector("#suggestionsList");
@@ -236,7 +238,7 @@ const processPromptText = require("./app.js");
 
             // Update the textarea with the new text
             updatePromptText(newText);
-            
+
             // Update stored prompt text
             currentPromptText = newText;
 
@@ -303,18 +305,19 @@ const processPromptText = require("./app.js");
         }
         // Function to show token savings notification
         function showTokenNotification(tokensSaved) {
-          console.log("showTokenNotification called with:", tokensSaved);
-          
-          // Remove existing notification if any
-          const existingNotification = document.getElementById("tokenNotification");
-          if (existingNotification) {
-            existingNotification.remove();
-          }
+            console.log("showTokenNotification called with:", tokensSaved);
 
-          // Create notification element
-          const notification = document.createElement("div");
-          notification.id = "tokenNotification";
-          notification.style.cssText = `
+            // Remove existing notification if any
+            const existingNotification =
+                document.getElementById("tokenNotification");
+            if (existingNotification) {
+                existingNotification.remove();
+            }
+
+            // Create notification element
+            const notification = document.createElement("div");
+            notification.id = "tokenNotification";
+            notification.style.cssText = `
             position: fixed;
             top: 20px;
             right: 20px;
@@ -331,11 +334,11 @@ const processPromptText = require("./app.js");
             animation: slideIn 0.3s ease-out;
             max-width: 300px;
           `;
-          notification.textContent = `You just saved ${tokensSaved} tokens for this prompt!`;
+            notification.textContent = `You just saved ${tokensSaved} tokens for this prompt!`;
 
-          // Add animation
-          const style = document.createElement("style");
-          style.textContent = `
+            // Add animation
+            const style = document.createElement("style");
+            style.textContent = `
             @keyframes slideIn {
               from {
                 transform: translateX(100%);
@@ -357,182 +360,245 @@ const processPromptText = require("./app.js");
               }
             }
           `;
-          if (!document.getElementById("tokenNotificationStyles")) {
-            style.id = "tokenNotificationStyles";
-            document.head.appendChild(style);
-          }
+            if (!document.getElementById("tokenNotificationStyles")) {
+                style.id = "tokenNotificationStyles";
+                document.head.appendChild(style);
+            }
 
-          document.body.appendChild(notification);
+            document.body.appendChild(notification);
 
-          // Auto-remove after 4 seconds
-          setTimeout(() => {
-            notification.style.animation = "slideOut 0.3s ease-out";
+            // Auto-remove after 4 seconds
             setTimeout(() => {
-              if (notification.parentNode) {
-                notification.remove();
-              }
-            }, 300);
-          }, 4000);
+                notification.style.animation = "slideOut 0.3s ease-out";
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 300);
+            }, 4000);
         }
 
         // Function to find and setup send button listener
         function setupSendButtonListener() {
-          // Try multiple common selectors for send button
-          const sendButtonSelectors = [
-            '#composer-submit-button', // Specific ID from logs
-            'button[aria-label*="Send"]',
-            'button[aria-label*="send"]',
-            'button[aria-label*="Submit"]',
-            'button[aria-label*="submit"]',
-            'button[type="submit"]',
-            '.ms-auto button', // Common pattern near textarea
-            'button:has(svg[viewBox*="640"])', // Arrow icon button
-            '[data-testid*="send"]',
-            '[data-testid*="submit"]'
-          ];
+            // Try multiple common selectors for send button
+            const sendButtonSelectors = [
+                "#composer-submit-button", // Specific ID from logs
+                'button[aria-label*="Send"]',
+                'button[aria-label*="send"]',
+                'button[aria-label*="Submit"]',
+                'button[aria-label*="submit"]',
+                'button[type="submit"]',
+                ".ms-auto button", // Common pattern near textarea
+                'button:has(svg[viewBox*="640"])', // Arrow icon button
+                '[data-testid*="send"]',
+                '[data-testid*="submit"]',
+            ];
 
-          let sendButton = null;
-          for (const selector of sendButtonSelectors) {
-            try {
-              const buttons = document.querySelectorAll(selector);
-              // Find button near the textarea container
-              const textarea = document.querySelector("#prompt-textarea");
-              if (textarea) {
-                const container = textarea.closest("form") || textarea.closest("div")?.parentElement;
-                if (container) {
-                  for (const btn of buttons) {
-                    if (container.contains(btn) || btn.closest("form") === container) {
-                      sendButton = btn;
-                      break;
+            let sendButton = null;
+            for (const selector of sendButtonSelectors) {
+                try {
+                    const buttons = document.querySelectorAll(selector);
+                    // Find button near the textarea container
+                    const textarea = document.querySelector("#prompt-textarea");
+                    if (textarea) {
+                        const container =
+                            textarea.closest("form") ||
+                            textarea.closest("div")?.parentElement;
+                        if (container) {
+                            for (const btn of buttons) {
+                                if (
+                                    container.contains(btn) ||
+                                    btn.closest("form") === container
+                                ) {
+                                    sendButton = btn;
+                                    break;
+                                }
+                            }
+                        }
                     }
-                  }
+                    if (sendButton) break;
+                } catch (e) {
+                    // Invalid selector, continue
                 }
-              }
-              if (sendButton) break;
-            } catch (e) {
-              // Invalid selector, continue
             }
-          }
 
-          // If found, add listener (check if already has our listener)
-          // Also check that it's not a "Stop streaming" or "Dictate" button
-          if (sendButton && !sendButton.hasAttribute("data-token-listener")) {
-            const ariaLabel = sendButton.getAttribute("aria-label") || "";
-            const buttonId = sendButton.id || "";
-            
-            // Skip buttons that are clearly not the send button
-            if (ariaLabel.includes("Dictate") || ariaLabel.includes("Stop streaming")) {
-              console.log("⚠️ Skipping non-send button:", ariaLabel);
-              return false;
-            }
-            
-            // Only attach if it's actually a send button (has "Send" in label or is the submit button)
-            if (buttonId === "composer-submit-button" || ariaLabel.toLowerCase().includes("send")) {
-              sendButton.setAttribute("data-token-listener", "true");
-              
-              sendButton.addEventListener("click", (e) => {
-                // Capture the token count immediately before any async operations
-                const tokensToShow = currentPromptTokensSaved;
-                console.log("Send button clicked! Tokens saved:", tokensToShow);
-                
-                // Only show if we haven't already shown it (prevent duplicate from delegation listener)
-                if (!notificationShown && tokensToShow > 0) {
-                  notificationShown = true;
-                  
-                  // Small delay to ensure the click happens
-                  setTimeout(() => {
-                    console.log("Showing notification for", tokensToShow, "tokens");
-                    showTokenNotification(tokensToShow);
-                    // Reset counter for next prompt
-                    currentPromptTokensSaved = 0;
-                    
-                    // Reset flag after a delay
-                    setTimeout(() => {
-                      notificationShown = false;
-                    }, 5000);
-                  }, 100);
-                } else if (tokensToShow === 0) {
-                  console.log("No tokens saved for this prompt");
+            // If found, add listener (check if already has our listener)
+            // Also check that it's not a "Stop streaming" or "Dictate" button
+            if (sendButton && !sendButton.hasAttribute("data-token-listener")) {
+                const ariaLabel = sendButton.getAttribute("aria-label") || "";
+                const buttonId = sendButton.id || "";
+
+                // Skip buttons that are clearly not the send button
+                if (
+                    ariaLabel.includes("Dictate") ||
+                    ariaLabel.includes("Stop streaming")
+                ) {
+                    console.log("⚠️ Skipping non-send button:", ariaLabel);
+                    return false;
                 }
-              }, true); // Use capture phase to catch early
 
-              console.log("✅ Send button listener attached to:", sendButton, "aria-label:", ariaLabel);
-              return true;
+                // Only attach if it's actually a send button (has "Send" in label or is the submit button)
+                if (
+                    buttonId === "composer-submit-button" ||
+                    ariaLabel.toLowerCase().includes("send")
+                ) {
+                    sendButton.setAttribute("data-token-listener", "true");
+
+                    sendButton.addEventListener(
+                        "click",
+                        (e) => {
+                            // Capture the token count immediately before any async operations
+                            const tokensToShow = currentPromptTokensSaved;
+                            console.log(
+                                "Send button clicked! Tokens saved:",
+                                tokensToShow
+                            );
+
+                            // Only show if we haven't already shown it (prevent duplicate from delegation listener)
+                            if (!notificationShown && tokensToShow > 0) {
+                                notificationShown = true;
+
+                                // Small delay to ensure the click happens
+                                setTimeout(() => {
+                                    console.log(
+                                        "Showing notification for",
+                                        tokensToShow,
+                                        "tokens"
+                                    );
+                                    showTokenNotification(tokensToShow);
+                                    // Reset counter for next prompt
+                                    currentPromptTokensSaved = 0;
+
+                                    // Reset flag after a delay
+                                    setTimeout(() => {
+                                        notificationShown = false;
+                                    }, 5000);
+                                }, 100);
+                            } else if (tokensToShow === 0) {
+                                console.log("No tokens saved for this prompt");
+                            }
+                        },
+                        true
+                    ); // Use capture phase to catch early
+
+                    console.log(
+                        "✅ Send button listener attached to:",
+                        sendButton,
+                        "aria-label:",
+                        ariaLabel
+                    );
+                    return true;
+                }
             }
-          }
 
-          console.log("⚠️ Send button not found");
-          return false;
+            console.log("⚠️ Send button not found");
+            return false;
         }
 
         // Use event delegation as a fallback to catch send button clicks
         // This works even if the button is dynamically created
         let delegationListenerAdded = false;
-        
+
         function addDelegationListener() {
-          if (delegationListenerAdded) return;
-          delegationListenerAdded = true;
-          
-          document.addEventListener("click", (e) => {
-            const target = e.target;
-            const button = target.matches('button') ? target : target.closest('button');
-            
-            if (!button) return;
-            
-            const buttonId = button.id || "";
-            const ariaLabel = (button.getAttribute("aria-label") || "").toLowerCase();
-            
-            // Check if this is the send button (by ID or aria-label)
-            const isSendButton = buttonId === "composer-submit-button" ||
-                                 (ariaLabel.includes("send") && !ariaLabel.includes("dictate") && !ariaLabel.includes("stop"));
-            
-            if (isSendButton) {
-              // Check if this button is near the prompt textarea
-              const textarea = document.querySelector("#prompt-textarea");
-              if (textarea) {
-                const container = textarea.closest("form") || textarea.closest("div")?.parentElement;
-                
-                if (button && container && (container.contains(button) || button.closest("form") === container)) {
-                  // Capture token count immediately
-                  const tokensToShow = currentPromptTokensSaved;
-                  const hasDirectListener = button.hasAttribute("data-token-listener");
-                  
-                  console.log("Send button clicked (via delegation)! Button ID:", buttonId, "aria-label:", button.getAttribute("aria-label"), "Has direct listener:", hasDirectListener, "Tokens saved:", tokensToShow);
-                  
-                  // Only show notification if we haven't already shown it and we have tokens
-                  if (!notificationShown && tokensToShow > 0) {
-                    notificationShown = true;
-                    
-                    // Use a small delay to ensure we catch the click
-                    setTimeout(() => {
-                      console.log("Showing notification for", tokensToShow, "tokens (via delegation)");
-                      showTokenNotification(tokensToShow);
-                      currentPromptTokensSaved = 0;
-                      
-                      // Reset flag after a delay
-                      setTimeout(() => {
-                        notificationShown = false;
-                      }, 5000);
-                    }, 150);
-                  } else if (tokensToShow === 0) {
-                    console.log("No tokens saved, but send button was clicked");
-                  }
-                }
-              }
-            }
-          }, true); // Use capture phase
+            if (delegationListenerAdded) return;
+            delegationListenerAdded = true;
+
+            document.addEventListener(
+                "click",
+                (e) => {
+                    const target = e.target;
+                    const button = target.matches("button")
+                        ? target
+                        : target.closest("button");
+
+                    if (!button) return;
+
+                    const buttonId = button.id || "";
+                    const ariaLabel = (
+                        button.getAttribute("aria-label") || ""
+                    ).toLowerCase();
+
+                    // Check if this is the send button (by ID or aria-label)
+                    const isSendButton =
+                        buttonId === "composer-submit-button" ||
+                        (ariaLabel.includes("send") &&
+                            !ariaLabel.includes("dictate") &&
+                            !ariaLabel.includes("stop"));
+
+                    if (isSendButton) {
+                        // Check if this button is near the prompt textarea
+                        const textarea =
+                            document.querySelector("#prompt-textarea");
+                        if (textarea) {
+                            const container =
+                                textarea.closest("form") ||
+                                textarea.closest("div")?.parentElement;
+
+                            if (
+                                button &&
+                                container &&
+                                (container.contains(button) ||
+                                    button.closest("form") === container)
+                            ) {
+                                // Capture token count immediately
+                                const tokensToShow = currentPromptTokensSaved;
+                                const hasDirectListener = button.hasAttribute(
+                                    "data-token-listener"
+                                );
+
+                                console.log(
+                                    "Send button clicked (via delegation)! Button ID:",
+                                    buttonId,
+                                    "aria-label:",
+                                    button.getAttribute("aria-label"),
+                                    "Has direct listener:",
+                                    hasDirectListener,
+                                    "Tokens saved:",
+                                    tokensToShow
+                                );
+
+                                // Only show notification if we haven't already shown it and we have tokens
+                                if (!notificationShown && tokensToShow > 0) {
+                                    notificationShown = true;
+
+                                    // Use a small delay to ensure we catch the click
+                                    setTimeout(() => {
+                                        console.log(
+                                            "Showing notification for",
+                                            tokensToShow,
+                                            "tokens (via delegation)"
+                                        );
+                                        showTokenNotification(tokensToShow);
+                                        currentPromptTokensSaved = 0;
+
+                                        // Reset flag after a delay
+                                        setTimeout(() => {
+                                            notificationShown = false;
+                                        }, 5000);
+                                    }, 150);
+                                } else if (tokensToShow === 0) {
+                                    console.log(
+                                        "No tokens saved, but send button was clicked"
+                                    );
+                                }
+                            }
+                        }
+                    }
+                },
+                true
+            ); // Use capture phase
         }
-        
+
         // Add delegation listener immediately
         addDelegationListener();
 
         const initSuggestionList = () => {
-          const list = popup.querySelector("#suggestionsList");
+            const list = popup.querySelector("#suggestionsList");
             while (list.firstChild) {
-              list.removeChild(list.firstChild);
+                list.removeChild(list.firstChild);
             }
 
-          const ps = document.querySelectorAll("#prompt-textarea p");
+            const ps = document.querySelectorAll("#prompt-textarea p");
             const promptText = Array.from(ps)
                 .map((p) => p.textContent.trim())
                 .join("\n");
@@ -583,98 +649,106 @@ const processPromptText = require("./app.js");
         // });
 
         popup.addEventListener("click", (e) => {
-          var target = e.target;
-          
-          // Handle clicks on SVG elements inside buttons by finding the button
-          const acceptBtn = target.closest(".accept-btn");
-          const rejectBtn = target.closest(".reject-btn");
-          const acceptAllBtn = target.closest("#acceptAllBtn");
-          const closeBtn = target.closest("#closePopup");
-          
-          if (closeBtn) {
-            popup.classList.add("hidden");
-            console.log("Suggestions popup closed");
-            const list = popup.querySelector("#suggestionsList");
-            while (list.firstChild) {
-              list.removeChild(list.firstChild);
-            }
-            return;
-          }
-          else if (acceptAllBtn) {
-            console.log("Accept All clicked");
-            acceptAllSuggestions();
-            return;
-          }
-          else if (acceptBtn) {
-            const idx = parseInt(acceptBtn.dataset.i, 10);
-            
-            // Safety check: ensure index is valid and suggestion exists
-            if (isNaN(idx) || idx < 0 || idx >= currentSuggestions.length) {
-              console.error("Invalid suggestion index:", idx, "Array length:", currentSuggestions.length);
-              return;
-            }
-            
-            const suggestion = currentSuggestions[idx];
-            if (!suggestion) {
-              console.error("Suggestion not found at index:", idx);
-              return;
-            }
-            
-            console.log("Accepted:", suggestion);
-            
-            // Apply the suggestion to the prompt text (without refreshing to avoid array conflicts)
-            applySuggestion(suggestion, false);
-            
-            // Add tokens saved to Chrome extension storage
-            if (suggestion.tokensSaved && suggestion.tokensSaved > 0) {
-              addTokensSaved(suggestion.tokensSaved);
-              // Track tokens saved for current prompt
-              currentPromptTokensSaved += suggestion.tokensSaved;
-            }
-            
-            // Remove the suggestion from the UI
-            acceptBtn.closest(".suggestion").remove();
-            
-            // Remove from currentSuggestions array
-            currentSuggestions.splice(idx, 1);
-            
-            // Update indices in remaining suggestions
-            const list = popup.querySelector("#suggestionsList");
-            const remainingSuggestions = list.querySelectorAll(".suggestion");
-            remainingSuggestions.forEach((suggestionEl, newIdx) => {
-              const btn = suggestionEl.querySelector(".accept-btn");
-              const rBtn = suggestionEl.querySelector(".reject-btn");
-              if (btn) btn.dataset.i = newIdx;
-              if (rBtn) rBtn.dataset.i = newIdx;
-            });
-            
-            // Refresh suggestions list after a short delay to allow UI updates
-            setTimeout(() => {
-              initSuggestionList();
-            }, 100);
-            
-            e.stopPropagation();
-            return;
+            var target = e.target;
 
-          } else if (rejectBtn) {
-            const idx = parseInt(rejectBtn.dataset.i, 10);
-            
-            // Safety check: ensure index is valid and suggestion exists
-            if (isNaN(idx) || idx < 0 || idx >= currentSuggestions.length) {
-              console.error("Invalid suggestion index:", idx, "Array length:", currentSuggestions.length);
-              return;
-            }
-            
-            const suggestion = currentSuggestions[idx];
-            if (!suggestion) {
-              console.error("Suggestion not found at index:", idx);
-              return;
-            }
-            
-            console.log("Rejected:", suggestion);
-            
-            // Remove the suggestion from the UI
-            rejectBtn.closest(".suggestion").remove();
+            // Handle clicks on SVG elements inside buttons by finding the button
+            const acceptBtn = target.closest(".accept-btn");
+            const rejectBtn = target.closest(".reject-btn");
+            const acceptAllBtn = target.closest("#acceptAllBtn");
+            const closeBtn = target.closest("#closePopup");
+
+            if (closeBtn) {
+                popup.classList.add("hidden");
+                console.log("Suggestions popup closed");
+                const list = popup.querySelector("#suggestionsList");
+                while (list.firstChild) {
+                    list.removeChild(list.firstChild);
+                }
+                return;
+            } else if (acceptAllBtn) {
+                console.log("Accept All clicked");
+                acceptAllSuggestions();
+                return;
+            } else if (acceptBtn) {
+                const idx = parseInt(acceptBtn.dataset.i, 10);
+
+                // Safety check: ensure index is valid and suggestion exists
+                if (isNaN(idx) || idx < 0 || idx >= currentSuggestions.length) {
+                    console.error(
+                        "Invalid suggestion index:",
+                        idx,
+                        "Array length:",
+                        currentSuggestions.length
+                    );
+                    return;
+                }
+
+                const suggestion = currentSuggestions[idx];
+                if (!suggestion) {
+                    console.error("Suggestion not found at index:", idx);
+                    return;
+                }
+
+                console.log("Accepted:", suggestion);
+
+                // Apply the suggestion to the prompt text (without refreshing to avoid array conflicts)
+                applySuggestion(suggestion, false);
+
+                // Add tokens saved to Chrome extension storage
+                if (suggestion.tokensSaved && suggestion.tokensSaved > 0) {
+                    addTokensSaved(suggestion.tokensSaved);
+                    // Track tokens saved for current prompt
+                    currentPromptTokensSaved += suggestion.tokensSaved;
+                }
+
+                // Remove the suggestion from the UI
+                acceptBtn.closest(".suggestion").remove();
+
+                // Remove from currentSuggestions array
+                currentSuggestions.splice(idx, 1);
+
+                // Update indices in remaining suggestions
+                const list = popup.querySelector("#suggestionsList");
+                const remainingSuggestions =
+                    list.querySelectorAll(".suggestion");
+                remainingSuggestions.forEach((suggestionEl, newIdx) => {
+                    const btn = suggestionEl.querySelector(".accept-btn");
+                    const rBtn = suggestionEl.querySelector(".reject-btn");
+                    if (btn) btn.dataset.i = newIdx;
+                    if (rBtn) rBtn.dataset.i = newIdx;
+                });
+
+                // Refresh suggestions list after a short delay to allow UI updates
+                setTimeout(() => {
+                    initSuggestionList();
+                }, 100);
+
+                e.stopPropagation();
+                return;
+            } else if (rejectBtn) {
+                const idx = parseInt(rejectBtn.dataset.i, 10);
+
+                // Safety check: ensure index is valid and suggestion exists
+                if (isNaN(idx) || idx < 0 || idx >= currentSuggestions.length) {
+                    console.error(
+                        "Invalid suggestion index:",
+                        idx,
+                        "Array length:",
+                        currentSuggestions.length
+                    );
+                    return;
+                }
+
+                const suggestion = currentSuggestions[idx];
+                if (!suggestion) {
+                    console.error("Suggestion not found at index:", idx);
+                    return;
+                }
+
+                console.log("Rejected:", suggestion);
+
+                // Remove the suggestion from the UI
+                rejectBtn.closest(".suggestion").remove();
 
                 // Remove from currentSuggestions array
                 currentSuggestions.splice(idx, 1);
@@ -722,34 +796,70 @@ const processPromptText = require("./app.js");
 
         // Setup send button listener
         setupSendButtonListener();
-        
+
         // Also try to find send button after a delay (in case it loads later)
         setTimeout(() => {
-          if (!setupSendButtonListener()) {
-            // Use mutation observer to watch for send button
-            const sendButtonObserver = new MutationObserver(() => {
-              if (setupSendButtonListener()) {
-                sendButtonObserver.disconnect();
-              }
-            });
-            sendButtonObserver.observe(document.body, { childList: true, subtree: true });
-          }
+            if (!setupSendButtonListener()) {
+                // Use mutation observer to watch for send button
+                const sendButtonObserver = new MutationObserver(() => {
+                    if (setupSendButtonListener()) {
+                        sendButtonObserver.disconnect();
+                    }
+                });
+                sendButtonObserver.observe(document.body, {
+                    childList: true,
+                    subtree: true,
+                });
+            }
         }, 1000);
 
         // Reset counter when textarea is cleared (new prompt started)
         const textarea = document.querySelector("#prompt-textarea");
         if (textarea) {
-          // Watch for textarea content changes
-          const textareaObserver = new MutationObserver((mutations) => {
-            const ps = textarea.querySelectorAll("p");
-            const isEmpty = ps.length === 0 || (ps.length === 1 && ps[0].textContent.trim() === "");
-            if (isEmpty && currentPromptTokensSaved > 0) {
-              // Textarea was cleared, reset counter for new prompt
-              currentPromptTokensSaved = 0;
-            }
-          });
-          textareaObserver.observe(textarea, { childList: true, subtree: true, characterData: true });
+            // Watch for textarea content changes
+            const textareaObserver = new MutationObserver((mutations) => {
+                const ps = textarea.querySelectorAll("p");
+                const isEmpty =
+                    ps.length === 0 ||
+                    (ps.length === 1 && ps[0].textContent.trim() === "");
+                if (isEmpty && currentPromptTokensSaved > 0) {
+                    // Textarea was cleared, reset counter for new prompt
+                    currentPromptTokensSaved = 0;
+                }
+            });
+            textareaObserver.observe(textarea, {
+                childList: true,
+                subtree: true,
+                characterData: true,
+            });
         }
+        const waitForTextBox = setInterval(() => {
+            const textBox = document.querySelector("#prompt-textarea");
+            let typingTimeout;
+
+            function handleTextChange() {
+                const ps = textBox.querySelectorAll("p");
+                const combinedText = Array.from(ps)
+                    .map((p) => p.innerText)
+                    .join("\n");
+
+                clearTimeout(typingTimeout);
+                typingTimeout = setTimeout(() => {
+                    initSuggestionList();
+                }, 1000);
+            }
+
+            if (textBox) {
+                clearInterval(waitForTextBox);
+
+                textBox.addEventListener("input", handleTextChange);
+                textBox.addEventListener("keydown", (e) => {
+                    if (e.key === "Backspace" || e.key === "Delete") {
+                        handleTextChange();
+                    }
+                });
+            }
+        }, 200);
     }
 
     // Run initially
