@@ -1,4 +1,5 @@
 const processPromptText = require("./app.js");
+const getTokenCount = require('./token-counter');
 
 (function () {
     const containerSelector = ".ms-auto.flex.items-center.gap-1\\.5";
@@ -13,6 +14,28 @@ const processPromptText = require("./app.js");
 
         // Don't add multiple icons
         if (container.querySelector(".custom-icon")) return;
+
+        // Create number display to the left of the icon
+        const numberDisplay = document.createElement("div");
+        var totalTokens = 0;
+        numberDisplay.className = "custom-number-display";
+        numberDisplay.textContent = totalTokens;
+        numberDisplay.style.cssText = `
+            min-width: 60px;
+            height: 32px;
+            padding: 4px 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            background: transparent;
+            color: inherit;
+            font-size: 14px;
+            text-align: center;
+            margin-right: 8px;
+        `;
+        numberDisplay.title = "Token Count";
 
         const icon = document.createElement("div");
         icon.className = "custom-icon unselectable";
@@ -150,6 +173,34 @@ const processPromptText = require("./app.js");
                 });
             });
         }
+
+        function addTotalTokens(tokens) {
+          const storage = getStorage();
+          if (!storage) {
+              console.warn("Storage API not available");
+              return;
+          }
+
+          // Get current total tokens saved
+          storage.get(["totalTokensUsed"], (result) => {
+              const currentTotal = result.totalTokensUsed || 0;
+              const newTotal = currentTotal + tokens;
+
+              // Update storage with new total
+              storage.set({ totalTokensUsed: newTotal }, () => {
+                  if (chrome?.runtime?.lastError) {
+                      console.error(
+                          "Error saving tokens:",
+                          chrome.runtime.lastError
+                      );
+                  } else {
+                      console.log(
+                          `Added ${tokens} tokens. Total Used: ${newTotal}`
+                      );
+                  }
+              });
+          });
+      }
 
         // Function to get current prompt text from textarea
         function getPromptText() {
@@ -517,7 +568,9 @@ const processPromptText = require("./app.js");
                                 "Send button clicked! Tokens saved:",
                                 tokensToShow
                             );
-
+                            addTotalTokens(totalTokens);
+                            totalTokens = 0;
+                            numberDisplay.textContent = totalTokens;
                             // Only show if we haven't already shown it (prevent duplicate from delegation listener)
                             if (!notificationShown && tokensToShow > 0) {
                                 notificationShown = true;
@@ -897,7 +950,8 @@ const processPromptText = require("./app.js");
         // });
 
         container.insertBefore(icon, container.firstChild);
-        console.log("✅ Circular icon added");
+        container.insertBefore(numberDisplay, icon);
+        console.log("✅ Circular icon and number display added");
 
         // Setup send button listener
         setupSendButtonListener();
@@ -947,7 +1001,9 @@ const processPromptText = require("./app.js");
                 const combinedText = Array.from(ps)
                     .map((p) => p.innerText)
                     .join("\n");
-
+                totalTokens = getTokenCount(combinedText);
+                // Update the display with the new token count
+                numberDisplay.textContent = totalTokens;
                 clearTimeout(typingTimeout);
                 typingTimeout = setTimeout(() => {
                     if (!notOpened) {
@@ -958,7 +1014,7 @@ const processPromptText = require("./app.js");
 
             if (textBox) {
                 clearInterval(waitForTextBox);
-
+                handleTextChange();
                 textBox.addEventListener("input", handleTextChange);
                 textBox.addEventListener("keydown", (e) => {
                     if (e.key === "Backspace" || e.key === "Delete") {

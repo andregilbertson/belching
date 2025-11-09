@@ -2,7 +2,7 @@ const React = require("react");
 const { createRoot } = require("react-dom/client");
 
 // Hanging bulb animation component
-function HangingBulbTimer({ lightbulbTime }) {
+function HangingBulbTimer({ lightbulbTime, label = "Light Saved" }) {
   const [flickerOpacity, setFlickerOpacity] = React.useState(1);
 
   React.useEffect(() => {
@@ -53,7 +53,7 @@ function HangingBulbTimer({ lightbulbTime }) {
 
       {/* Time Display */}
       <div className="bulb-time-simple">
-        <div className="bulb-time-label">Light Saved</div>
+        <div className="bulb-time-label">{label}</div>
         <div className="bulb-time-value">{lightbulbTime}</div>
       </div>
     </div>
@@ -125,6 +125,10 @@ function App() {
   const [progress, setProgress] = React.useState(0);
   const [lightbulbTime, setLightbulbTime] = React.useState("");
   const [totalSeconds, setTotalSeconds] = React.useState(0);
+  const [totalTokensUsed, setTotalTokensUsed] = React.useState(0);
+  const [totalWaterUsed, setTotalWaterUsed] = React.useState(0);
+  const [totalBottlesUsed, setTotalBottlesUsed] = React.useState(0);
+  const [totalLightbulbTime, setTotalLightbulbTime] = React.useState("");
 
   // Get storage API (Chrome or Firefox)
   const getStorage = () => {
@@ -145,6 +149,7 @@ function App() {
         "simplifySentences",
         "aggressiveMode",
         "tokensSaved",
+        "totalTokensUsed",
       ],
       (data) => {
         const loadedSettings = {
@@ -157,6 +162,7 @@ function App() {
         };
         setSettings(loadedSettings);
         setTokensSaved(data.tokensSaved || 0);
+        setTotalTokensUsed(data.totalTokensUsed || 0);
         
         // Apply styles
         document.documentElement.style.setProperty(
@@ -203,6 +209,33 @@ function App() {
     }
     setLightbulbTime(timeString);
   }, [tokensSaved]);
+
+  // Calculate total water and energy used
+  React.useEffect(() => {
+    const water = totalTokensUsed; // 1 token = 1 mL
+    setTotalWaterUsed(water);
+    
+    // Calculate bottles used (474mL per bottle)
+    const bottles = water / 474;
+    setTotalBottlesUsed(bottles);
+    
+    // Calculate lightbulb time (1 token = 12.96 seconds for 5W LED)
+    const calculatedTotalSeconds = totalTokensUsed * 12.96;
+    
+    const hours = Math.floor(calculatedTotalSeconds / 3600);
+    const minutes = Math.floor((calculatedTotalSeconds % 3600) / 60);
+    const seconds = Math.floor(calculatedTotalSeconds % 60);
+    
+    let timeString = "";
+    if (hours > 0) {
+      timeString = `${hours}h ${minutes}m ${seconds}s`;
+    } else if (minutes > 0) {
+      timeString = `${minutes}m ${seconds}s`;
+    } else {
+      timeString = `${seconds}s`;
+    }
+    setTotalLightbulbTime(timeString);
+  }, [totalTokensUsed]);
 
   const applyTheme = (isDark) => {
     if (isDark) {
@@ -251,6 +284,12 @@ function App() {
           Main
         </div>
         <div
+          className={`tab ${activeTab === "usage" ? "active" : ""}`}
+          onClick={() => setActiveTab("usage")}
+        >
+          Usage
+        </div>
+        <div
           className={`tab ${activeTab === "settings" ? "active" : ""}`}
           onClick={() => setActiveTab("settings")}
         >
@@ -289,6 +328,43 @@ function App() {
             <div className="metric">
               <span className="metric-label">5W LED Bulb Time</span>
               <span className="metric-value">{lightbulbTime}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Usage tab content */}
+      {activeTab === "usage" && (
+        <div className="tab-content active">
+          <div className="impact-card">
+            <h3 className="impact-title">Total Usage</h3>
+
+            {/* Progress Bar and Bulb Container */}
+            <div className="progress-bulb-container">
+              <SemiCircleProgress 
+                progress={Math.min(100, Math.round(((totalWaterUsed % 474)/474) * 100))}
+                label="Water Bottles Used"
+                bottlesSaved={totalBottlesUsed}
+              />
+              <HangingBulbTimer 
+                lightbulbTime={totalLightbulbTime}
+                label="Light Used"
+              />
+            </div>
+
+            <div className="metric">
+              <span className="metric-label">Total Tokens Used</span>
+              <span className="metric-value">{totalTokensUsed}</span>
+            </div>
+
+            <div className="metric">
+              <span className="metric-label">Total Water Used</span>
+              <span className="metric-value">{totalWaterUsed} mL</span>
+            </div>
+
+            <div className="metric">
+              <span className="metric-label">5W LED Bulb Time</span>
+              <span className="metric-value">{totalLightbulbTime}</span>
             </div>
           </div>
         </div>
