@@ -119,3 +119,115 @@
   pointer-events: auto;
   cursor: pointer;
 }
+
+
+/* Suggestions / Pop up box of suggestions*/
+
+/* Floating button */
+#checkTextBtn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #4a90e2;
+  color: white;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  z-index: 999999;
+}
+#checkTextBtn:hover {
+  background: #3b7bc4;
+}
+
+/* Popup container */
+#suggestionsPopup {
+  position: fixed;
+  bottom: 70px;
+  right: 20px;
+  width: 350px;
+  max-height: 400px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 2147483647; /* very high to avoid overlay issues */
+  pointer-events: auto; /* ensure it receives clicks */
+}
+
+/* Hidden */
+#suggestionsPopup.hidden {
+  display: none;
+}
+
+/* Header */
+.popup-header {
+  background: #4a90e2;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+}
+.popup-header h2 {
+  margin: 0;
+  font-size: 16px;
+}
+.popup-header button {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+/* Suggestion list */
+.suggestions-list {
+  overflow-y: auto;
+  padding: 10px;
+  flex-grow: 1;
+}
+.suggestion {
+  background: #f8f9fa;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 8px;
+}
+.suggestion-type {
+  font-size: 13px;
+  color: #4a90e2;
+  font-weight: bold;
+}
+.suggestion-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 5px;
+}
+.suggestion-text {
+  color: #4a90e2;
+}
+.suggestion-savings {
+  color: #FF0000;
+}
+.accept-btn {
+  background: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+.reject-btn {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 4px 8px;
+  cursor: pointer;
+}

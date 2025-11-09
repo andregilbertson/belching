@@ -54,9 +54,50 @@ const processPromptText = require("./app.js");
             }
         })();
 
+        const popup = document.createElement("div");
+        popup.id = "suggestionsPopup";
+        popup.className = "popup hidden";
+        popup.innerHTML = `
+          <div class="popup-header">
+            <h2>Suggestions</h2>
+            <button id="closePopup">✖</button>
+          </div>
+          <div id="suggestionsList" class="suggestions-list"></div>
+        `;
+        document.body.appendChild(popup);
+
+        // Example suggestions (replace with your analysis logic)
+        const sampleSuggestions = [
+          { type: "Spellcheck", before: "recieve", after: "receive", tokensSaved: 1},
+          { type: "Replacement", before: "utilize", after: "use", tokensSaved: 1 },
+          { type: "Spellcheck", before: "definately", after: "definitely", tokensSaved: 1 },
+        ];
+
+        // Populate popup with suggestions
+        function populateSuggestions(suggestions) {
+          const list = popup.querySelector("#suggestionsList");
+          list.innerHTML = "";
+          suggestions.forEach((s, i) => {
+            const div = document.createElement("div");
+            div.className = "suggestion";
+            div.innerHTML = `
+              <div class="suggestion-type">${s.type}</div>
+              <div class="suggestion-text"><b>Before:</b> ${s.before}</div>
+              <div class="suggestion-text"><b>After:</b> ${s.after}</div>
+              <div class="suggestion-savings"><b>Tokens Saved:</b>${s.tokensSaved}</div>
+              <div class="suggestion-buttons">
+                <button class="accept-btn" data-i="${i}">✔</button>
+                <button class="reject-btn" data-i="${i}">✖</button>
+              </div>
+            `;
+            list.appendChild(div);
+          });
+        }
+
         
         // Click event (currently blank)
-        icon.addEventListener("click", () => {
+        icon.addEventListener("click", (e) => {
+          e.stopPropagation();
             // TODO: fill in functionality
             console.log("Icon clicked!");
             const ps = document.querySelectorAll("#prompt-textarea p");
@@ -65,7 +106,12 @@ const processPromptText = require("./app.js");
                 .join("\n");
             console.log("Prompt Text:", promptText);
 
-            processPromptText(promptText); // <- call your logic
+           processPromptText(promptText).then((suggs) => {
+            console.log("got suggests", suggs);
+            populateSuggestions(suggs);
+            popup.classList.remove("hidden");
+           });
+            // <- call your logic
             // Tags you want to extract text from
             // const TAGS = ["div", "p", "strong", "code"];
 
@@ -88,6 +134,40 @@ const processPromptText = require("./app.js");
             //     .filter((chat) => chat.text != "");
 
             // console.log(chatText);
+        });
+
+        // popup.querySelector("#closePopup").addEventListener("click", () => {
+        //   popup.classList.add("hidden");
+        // });
+
+        popup.addEventListener("click", (e) => {
+          var target = e.target
+          if (target.matches("#closePopup")) {
+            popup.classList.add("hidden");
+            console.log("Suggestions popup closed");
+            return;
+          }
+          else if (target.classList.contains("accept-btn")) {
+            const idx = target.dataset.i;
+            console.log("Accepted:", sampleSuggestions[idx]);
+            target.closest(".suggestion").remove();
+          } else if (target.classList.contains("reject-btn")) {
+            const idx = e.target.dataset.i;
+            console.log("Rejected:", sampleSuggestions[idx]);
+            target.closest(".suggestion").remove();
+          }
+
+          e.stopPropagation();
+        });
+
+        //listen for clicks outside of popup, close popup
+        document.addEventListener("click", (e) => {
+          const clickedInsidePopup = popup.contains(e.target);
+          const clickedButton = e.target === icon;
+
+          if (!clickedInsidePopup && !clickedButton) {
+            popup.classList.add("hidden");
+          }
         });
 
         container.insertBefore(icon, container.firstChild);
