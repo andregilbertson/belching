@@ -233,3 +233,7 @@
   padding: 4px 8px;
   cursor: pointer;
 }
+
+.no-suggestions-message {
+  color: black;
+}
