@@ -5,8 +5,8 @@
     --main-surface-tertiary: #676767;
     --border-default: #ffffff26;
 
-    --change-red: #ff2c2c;
-    --change-green: #32cd32;
+    --change-red: #ff5c6c;
+    --change-green: #51c969;
 }
 
 .prompt-wrapper {
@@ -293,11 +293,12 @@
     border-radius: 50%;
     padding: 8px;
     cursor: pointer;
+    transition: background-color 0.2s ease;
 }
 
 .accept-btn:hover,
 .reject-btn:hover {
-    background-color: var(--main-surface-secondary);
+  background-color: var(--main-surface-secondary);
 }
 
 .btn-svg {
@@ -322,6 +323,7 @@
 #closePopup {
     padding: 8px;
     border-radius: 50%;
+    transition: background-color 0.2s ease;
 }
 
 #closePopup:hover {

@@ -308,12 +308,16 @@ const processPromptText = require("./app.js");
                 messageDiv.className = "no-suggestions-message";
                 const currentText = getPromptText();
                 if (currentText.trim() === '') {
-                  messageDiv.textContent = "Start writing a prompt to get suggestions!";
+                  messageDiv.textContent = "Looks like your prompt is empty.\n\nStart writing to get suggestions!";
                 } else {
-                  messageDiv.textContent = "Your prompt looks great!";
+                  messageDiv.textContent = "We're all out of suggestions.\n\nSubmit your prompt to see how much you saved!";
                 }
-              
-                list.appendChild(messageDiv);
+              messageDiv.style.opacity = "0";
+              messageDiv.style.transition = "opacity 0.4s";
+              list.appendChild(messageDiv);
+              setTimeout(() => {
+                messageDiv.style.opacity = "1";
+              }, 10);
             } else {
                 //currentSuggestions = suggestions;
                 // Store current prompt text
@@ -383,7 +387,12 @@ const processPromptText = require("./app.js");
             animation: slideIn 0.3s ease-out;
             max-width: 300px;
           `;
-            notification.textContent = `You just saved ${tokensSaved} tokens for this prompt!`;
+            if (tokensSaved === 1) {
+              notification.textContent = `You just saved ${tokensSaved} token!`;
+            } else {
+              notification.textContent = `You just saved ${tokensSaved} tokens!`;
+            }
+            
 
             // Add animation
             const style = document.createElement("style");
@@ -619,12 +628,29 @@ const processPromptText = require("./app.js");
                                         );
                                         showTokenNotification(tokensToShow);
                                         notOpened = true;
-                                        popup.classList.add("hidden");
+                                        popup.style.transition = "opacity 0.4s";
+                                        popup.style.opacity = "0";
+                                    
                                         console.log("Suggestions popup closed");
-                                        const list = popup.querySelector("#suggestionsList");
-                                        while (list.firstChild) {
-                                            list.removeChild(list.firstChild);
-                                        }
+                                        //const list = popup.querySelector("#suggestionsList");
+                                        popup.addEventListener("transitionend", function handleTransitionEnd(event) {
+                                          // Make sure it’s the opacity transition
+                                          if (event.propertyName === "opacity") {
+                                              // Remove all children safely
+                                              const list = popup.querySelector("#suggestionsList");
+                                              while (list.firstChild) {
+                                                  list.removeChild(list.firstChild);
+                                              }
+
+                                              popup.classList.add("hidden");
+                                              // Clean up styles
+                                              popup.style.opacity = "";
+                                              popup.style.transition = "";
+
+                                              // Remove this listener so it doesn’t fire again
+                                              popup.removeEventListener("transitionend", handleTransitionEnd);
+                                          }
+                                        });
                                         currentPromptTokensSaved = 0;
 
                                         // Reset flag after a delay
@@ -664,6 +690,13 @@ const processPromptText = require("./app.js");
                 console.log("got suggests", suggs);
                 populateSuggestions(suggs);
                 popup.classList.remove("hidden");
+                // Smoothly show popup by fading in
+                popup.style.opacity = "0";
+                popup.style.transition = "opacity 0.4s";
+                setTimeout(() => {
+                  popup.style.opacity = "1";
+                }, 10);
+
             });
         };
         var notOpened = true;
@@ -677,29 +710,6 @@ const processPromptText = require("./app.js");
             console.log("Icon clicked!");
             initSuggestionList();
 
-            // <- call your logic
-            // Tags you want to extract text from
-            // const TAGS = ["div", "p", "strong", "code"];
-
-            // const articles = document.querySelectorAll("article");
-
-            // const chatText = Array.from(articles)
-            //     .map((article) => {
-            //         const role = article.getAttribute("data-role") || "unknown";
-
-            //         // Collect text from all desired tags inside the article
-            //         const text = Array.from(
-            //             article.querySelectorAll(TAGS.join(","))
-            //         )
-            //             .map((el) => el.innerText.trim())
-            //             .filter(Boolean) // remove empty strings
-            //             .join("\n");
-
-            //         return { role, text };
-            //     })
-            //     .filter((chat) => chat.text != "");
-
-            // console.log(chatText);
         });
 
         // popup.querySelector("#closePopup").addEventListener("click", () => {
@@ -717,12 +727,29 @@ const processPromptText = require("./app.js");
 
             if (closeBtn) {
                 notOpened = true;
-                popup.classList.add("hidden");
+                // popup.classList.add("hidden");
+                popup.style.transition = "opacity 0.4s";
+                popup.style.opacity = "0";
+                
                 console.log("Suggestions popup closed");
-                const list = popup.querySelector("#suggestionsList");
-                while (list.firstChild) {
-                    list.removeChild(list.firstChild);
-                }
+                popup.addEventListener("transitionend", function handleTransitionEnd(event) {
+                  // Make sure it’s the opacity transition
+                  if (event.propertyName === "opacity") {
+                      // Remove all children safely
+                      popup.classList.add("hidden");
+                      const list = popup.querySelector("#suggestionsList");
+                      while (list.firstChild) {
+                          list.removeChild(list.firstChild);
+                      }
+                      // Clean up styles
+  
+                      popup.style.opacity = "";
+                      popup.style.transition = "";
+
+                      // Remove this listener so it doesn’t fire again
+                      popup.removeEventListener("transitionend", handleTransitionEnd);
+                  }
+                });
                 return;
             } else if (acceptAllBtn) {
                 console.log("Accept All clicked");
