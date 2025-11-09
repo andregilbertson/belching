@@ -352,7 +352,13 @@ const processPromptText = require("./app.js");
                   </button>
                 </div>
               `;
+                    // Add with fade-in transition
+                    div.style.opacity = "0";
+                    div.style.transition = "opacity 0.4s";
                     list.appendChild(div);
+                    setTimeout(() => {
+                      div.style.opacity = "1";
+                    }, 10);
                 });
             }
         }
