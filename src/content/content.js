@@ -79,6 +79,35 @@ const processPromptText = require("./app.js");
         // Store current prompt text for applying changes
         let currentPromptText = "";
 
+        // Get storage API (Chrome or Firefox)
+        function getStorage() {
+          return chrome?.storage?.sync || browser?.storage?.sync;
+        }
+
+        // Function to add tokens saved to Chrome extension storage
+        function addTokensSaved(tokens) {
+          const storage = getStorage();
+          if (!storage) {
+            console.warn("Storage API not available");
+            return;
+          }
+
+          // Get current total tokens saved
+          storage.get(["tokensSaved"], (result) => {
+            const currentTotal = result.tokensSaved || 0;
+            const newTotal = currentTotal + tokens;
+
+            // Update storage with new total
+            storage.set({ tokensSaved: newTotal }, () => {
+              if (chrome?.runtime?.lastError) {
+                console.error("Error saving tokens:", chrome.runtime.lastError);
+              } else {
+                console.log(`Added ${tokens} tokens. Total saved: ${newTotal}`);
+              }
+            });
+          });
+        }
+
         // Function to get current prompt text from textarea
         function getPromptText() {
           const ps = document.querySelectorAll("#prompt-textarea p");
@@ -115,16 +144,17 @@ const processPromptText = require("./app.js");
           
           // Create a regex that matches the before text as a whole word/phrase
           // Use word boundaries for single words, or exact match for phrases
+          // Note: No 'g' flag - only replace the first occurrence
           let regex;
           if (/\s/.test(suggestion.before)) {
             // For phrases (containing spaces), match exactly
-            regex = new RegExp(escapedBefore.replace(/\s+/g, "\\s+"), "gi");
+            regex = new RegExp(escapedBefore.replace(/\s+/g, "\\s+"), "i");
           } else {
             // For single words, use word boundaries
-            regex = new RegExp("\\b" + escapedBefore + "\\b", "gi");
+            regex = new RegExp("\\b" + escapedBefore + "\\b", "i");
           }
 
-          // Replace the first occurrence
+          // Replace only the first occurrence
           const newText = currentText.replace(regex, (match) => {
             // Preserve the original case pattern if possible
             if (match === match.toUpperCase()) {
@@ -244,6 +274,11 @@ const processPromptText = require("./app.js");
             
             // Apply the suggestion to the prompt text
             applySuggestion(suggestion);
+            
+            // Add tokens saved to Chrome extension storage
+            if (suggestion.tokensSaved && suggestion.tokensSaved > 0) {
+              addTokensSaved(suggestion.tokensSaved);
+            }
             
             // Remove the suggestion from the UI
             target.closest(".suggestion").remove();
